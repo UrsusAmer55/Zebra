@@ -43,6 +43,8 @@ ggmap(map)
 ggmap(map)+
   geom_point(aes(x = Lon, y = Lat,color=as.factor(ID)), data = zeb,
              alpha = .5, size = 3)
+
+#remove fixes with an HDOP >30
 hist(zeb$HDOP)
 table(zeb$HDOP)
 zeb<-zeb[zeb$HDOP<30,]
@@ -54,15 +56,51 @@ zeb$X_UTM<-XY[,1]
 
 #calc moverate
 # Distances
+head(zeb)
+zeb$zebID<-as.numeric(substr(zeb$ID,4,7))
+head(zeb$zebID)
 zeb$fixID<-1:nrow(zeb)
-nobs<-nrow(zeb)  
+zeb<-zeb[order(zeb$zebID,zeb$DTUTC),]
+nobs<-nrow(zeb) 
 zeb$dist<-c(0,sqrt((zeb$X_UTM[-1]-zeb$X_UTM[-nobs])^2+(zeb$Y_UTM[-1]-zeb$Y_UTM[-nobs])^2))
 hist(zeb$dist)
+zeb$lapse_sec<-c(0,zeb$DTUTC[-1]-zeb$DTUTC[-nobs])
+summary(zeb$lapse_sec)
 #different individual marker
+zeb$ID_check<-c(1,zeb$zebID[-1]-zeb$zebID[-nobs])
+head(zeb$ID_check)
+table(zeb$ID_check)
+#remove the 1's as they are the first fix of each individual
+zeb<-zeb[zeb$ID_check<1,]
 
+#look at movement metrics for outliers....
+hist(zeb$dist)
+summary(zeb$dist)
+summary(zeb$lapse_sec)
+#max lapse is 777600 (777600/(60*60) or 216 hours), median is 14400 or 14400/(60*60) 
+#how many fixes greater than 4 hours and a few secs...
+bigfix<-zeb[zeb$lapse_sec>14600,]
+#375 fixes larger than 4 hours + a few mins or (375/15148) 2%
+summary(bigfix$lapse_sec)
+#lets remove them: 
+zeb2<-zeb[zeb$lapse_sec<14600,]
 
+#create move rate: meters per min
+summary(zeb2$dist)
+summary(zeb2$lapse_sec)
+#remove those without any lapse between fixes
+zeb2<-zeb2[zeb2$lapse_sec!=0,]
+zeb2$moverate.mmin<-zeb2$dist/(zeb2$lapse_sec/(60))
+hist(zeb2$moverate.mmin)  
+summary(zeb2$moverate.mmin)
+
+#what should max speed be? - max speed ~65 km/h/~40 miles an hour - this translates to 1073 meter per min 
+toofast<-zeb2[zeb2$moverate.mmin>=1073,]
+toofast
+zeb3<-zeb2[zeb2$moverate.mmin<1073,]
+  
 #export the data for movebank
-write.csv(zeb,"C:/Users/M.Ditmer/Documents/Research/Zebra/GPS Fixes/ZebraLoc_Movebank.csv")
+write.csv(zeb3,"C:/Users/M.Ditmer/Documents/Research/Zebra/GPS Fixes/ZebraLoc_Movebank.csv")
 
 #read in shapefiles from Jeff
 biome<-readOGR("C:/Users/M.Ditmer/Documents/Research/Zebra/GIS Data/GIS",layer="biomes in namibia")
