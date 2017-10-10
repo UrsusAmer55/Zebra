@@ -102,6 +102,34 @@ zeb3<-zeb2[zeb2$moverate.mmin<1073,]
 #export the data for movebank
 write.csv(zeb3,"C:/Users/M.Ditmer/Documents/Research/Zebra/GPS Fixes/ZebraLoc_Movebank.csv")
 
+
+NDVI<-read.csv("C:/Users/M.Ditmer/Documents/Research/Zebra/GPS Fixes/Zebra-1718591841596376584/Zebra-1718591841596376584.csv")
+head(NDVI)
+
+library(Hmisc)
+str(NDVI)
+head(NDVI)
+rcorr(NDVI[,15],NDVI[,16], type="pearson")
+rcorr(NDVI[,15],NDVI[,17], type="pearson")
+rcorr(NDVI[,16],NDVI[,17], type="pearson")
+
+head(zeb3)
+
+z170<-zeb3[zeb3$ID=="SAT170",]
+head(z170)
+z170v<-cbind(z170,NDVI)
+
+plot(z170v$DTL,z170v$MODIS.Land.Terra.Vegetation.Indices.250m.16d.Enhanced.Vegetation.Index)
+plot(z170v$MODIS.Land.Terra.Vegetation.Indices.250m.16d.Enhanced.Vegetation.Index,z170v$moverate.mmin,ylim=c(0,50))
+plot(z170v$MODIS.Land.Terra.Vegetation.Indices.250m.16d.NDVI,z170v$moverate.mmin,ylim=c(0,50))
+
+
+
+
+library(moveVis)
+
+
+
 #read in shapefiles from Jeff
 biome<-readOGR("C:/Users/M.Ditmer/Documents/Research/Zebra/GIS Data/GIS",layer="biomes in namibia")
 plot(biome)
@@ -111,5 +139,7 @@ cons<-readOGR("C:/Users/M.Ditmer/Documents/Research/Zebra/GIS Data/GIS",layer="c
 plot(cons)
 str(cons)
 
+str(zeb3)
 
+plot(zeb3$DTL,zeb3$moverate.mmin,col=zeb3$ID)
 
